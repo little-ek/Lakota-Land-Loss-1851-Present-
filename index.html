@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">x
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #fff;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* ── INTRO ── */
+  #intro {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 10vh 8vw;
+    background: #fff;
+  }
+
+  .intro-eyebrow {
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #999;
+    margin-bottom: 2.5rem;
+  }
+
+  .intro-title {
+    font-size: clamp(2rem, 5vw, 4.2rem);
+    font-weight: 300;
+    line-height: 1.15;
+    color: #111;
+    margin-bottom: 1.8rem;
+    max-width: 760px;
+    letter-spacing: -0.01em;
+  }
+
+  .intro-title em { font-style: italic; }
+
+  .intro-rule {
+    width: 40px;
+    height: 1px;
+    background: #ccc;
+    margin: 0 auto 2.5rem;
+  }
+
+  .intro-body {
+    font-size: 0.95rem;
+    font-weight: 300;
+    line-height: 1.8;
+    color: #444;
+    max-width: 520px;
+    margin-bottom: 3rem;
+  }
+
+  .scroll-hint {
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #bbb;
+    animation: pulse 2.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+
+  /* ── MAP STACK — fullscreen sticky ── */
+  #map-stack {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    height: 100vh;
+    background: #f5f2ed;
+    z-index: 1;
+    margin-bottom: -100vh;
+  }
+
+  .map-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center 38%;
+    padding: 4vh 6vw 22vh;
+    opacity: 0;
+    transition: opacity 0.9s ease;
+  }
+
+  .map-img.active { opacity: 1; }
+
+  /* ── SCROLL SECTIONS ── */
+  #story { position: relative; }
+
+  .scroll-section {
+    position: relative;
+    height: 100vh;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  /* ── TEXT PANEL — bottom center ── */
+  .text-panel {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    width: min(580px, 92vw);
+    background: #fff;
+    padding: 1.8rem 2.2rem 2.2rem;
+    box-shadow: 0 -1px 0 #e8e8e8, 0 -12px 48px rgba(0,0,0,0.07);
+    opacity: 0;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    pointer-events: none;
+  }
+
+  .text-panel.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+  }
+
+  .panel-title {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #111;
+    line-height: 1.2;
+    margin-bottom: 0.2rem;
+    letter-spacing: -0.01em;
+  }
+
+  .panel-date {
+    font-size: 0.75rem;
+    font-weight: 300;
+    color: #999;
+    margin-bottom: 0.9rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid #eee;
+  }
+
+  .panel-body {
+    font-size: 0.8rem;
+    font-weight: 300;
+    line-height: 1.78;
+    color: #222;
+    max-height: 20vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #ddd transparent;
+  }
+
+  .panel-body p { margin-bottom: 0.75em; }
+  .panel-body p:last-child { margin-bottom: 0; }
+  .panel-body em { font-style: italic; color: #555; }
+
+  .panel-body blockquote {
+    margin: 0.75em 0;
+    padding: 0.5em 0.9em;
+    border-left: 2px solid #ddd;
+    font-style: italic;
+    color: #666;
+    font-size: 0.78rem;
+    line-height: 1.65;
+  }
+
+  .stat { font-weight: 500; color: #111; }
+  .red  { font-weight: 500; color: #c0392b; }
+
+  /* ── PROGRESS DOTS ── */
+  .map-dots {
+    position: fixed;
+    right: 1.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 100;
+  }
+
+  .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #ccc;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.3s;
+  }
+
+  .dot.active {
+    background: #333;
+    transform: scale(1.5);
+  }
+
+  /* ── OUTRO ── */
+  #outro {
+    position: relative;
+    z-index: 10;
+    background: #fff;
+    padding: 12vh 8vw;
+    border-top: 1px solid #eee;
+  }
+
+  .outro-inner {
+    max-width: 580px;
+    margin: 0 auto;
+  }
+
+  .outro-label {
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #aaa;
+    margin-bottom: 2rem;
+  }
+
+  .outro-title {
+    font-size: clamp(1.5rem, 3vw, 2.1rem);
+    font-weight: 300;
+    color: #111;
+    line-height: 1.2;
+    margin-bottom: 2rem;
+    letter-spacing: -0.01em;
+  }
+
+  .outro-body {
+    font-size: 0.86rem;
+    font-weight: 300;
+    line-height: 1.85;
+    color: #333;
+  }
+
+  .outro-body p { margin-bottom: 1.2em; }
+  .outro-body strong { font-weight: 500; color: #111; }
+
+  .refused {
+    display: block;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #111;
+    margin: 2rem 0;
+    padding: 1.2rem 1.5rem;
+    border: 1px solid #ddd;
+    letter-spacing: -0.01em;
+  }
+
+  .disclaimer {
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid #eee;
+    font-size: 0.7rem;
+    font-weight: 300;
+    color: #bbb;
+    line-height: 1.8;
+  }
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<section id="intro">
+  <h1 class="intro-title">
+    <em>Očhéthi Šakówiŋ</em><br>
+    Lakota Land Loss, 1851–Present
+  </h1>
+  <div class="intro-rule"></div>
+  <p class="intro-body">
+    How the boundaries defined in the 1851 Treaty of Fort Laramie compare to land currently held by the Lakota; the resulting patchwork makes legible the tools of encroachment.
+  </p>
+  <p class="scroll-hint">↓ scroll</p>
+</section>
+
+<!-- MAP STACK -->
+<div id="map-stack">
+  <img class="map-img active" id="map-1" src="Map 1.png" alt="Pre-1851 traditional territory">
+  <img class="map-img"        id="map-2" src="Map 2.png" alt="1851 Fort Laramie Treaty">
+  <img class="map-img"        id="map-3" src="Map 3.png" alt="Great Sioux Reservation 1868">
+  <img class="map-img"        id="map-4" src="Map 4.png" alt="Fragmentation 1889">
+  <img class="map-img"        id="map-5" src="Map 5.png" alt="Current tribal lands">
+</div>
+
+<!-- SCROLL SECTIONS -->
+<div id="story">
+
+  <div class="scroll-section" data-map="1">
+    <div class="text-panel">
+      <h2 class="panel-title">The Očhéthi Šakówiŋ</h2>
+      <p class="panel-date">Before 1851</p>
+      <div class="panel-body">
+        <p>The territory of the Očhéthi Šakówiŋ — the Seven Council Fires — extended across the Northern Great Plains from the Missouri River west into the Rocky Mountain foothills, and from the Platte River north into present-day Canada. At its heart stood the Black Hills: <em>Pahá Sápa</em>, the center of the Lakota world.</p>
+        <p>The confederacy comprised seven distinct nations: the four Dakota (Mdewakanton, Wahpekute, Wahpeton, Sisíthuŋwaŋ), the two Nakota (Yankton, Yanktonai), and the Teton Lakota — whose bands, including the Hunkpapa and Sicangu, held the westernmost territory. Their relationship to this land was collective, relational, and non-commodified. No document bounded it. That was about to change.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-section" data-map="2">
+    <div class="text-panel">
+      <h2 class="panel-title">Fort Laramie, 1851</h2>
+      <p class="panel-date">Horse Creek Treaty — September 17, 1851</p>
+      <div class="panel-body">
+        <p>The 1851 Fort Laramie Treaty recognized a Lakota homeland encompassing more than <span class="stat">60 million acres</span> centered on the Black Hills, spanning present-day North Dakota, South Dakota, Montana, Wyoming, and Nebraska. The promise was recorded in the De Smet map, drawn by Jesuit missionary Pierre-Jean De Smet at the council's conclusion — the surviving cartographic record of that promise.</p>
+        <p>The treaty was not fully ratified as agreed. The Senate unilaterally reduced the promised annuity period from fifty to ten years — a change not returned to the original signatories for their consent. This map also shows the five neighboring nations whose boundaries were defined simultaneously: a US administrative act, bounding Indigenous territories on its own terms.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-section" data-map="3">
+    <div class="text-panel">
+      <h2 class="panel-title">Great Sioux Reservation, 1868</h2>
+      <p class="panel-date">Fort Laramie Treaty — April 29, 1868</p>
+      <div class="panel-body">
+        <p>Following Red Cloud's War — in which Lakota forces successfully closed the Bozeman Trail — the 1868 treaty established the Great Sioux Reservation: all land west of the Missouri River in present-day South Dakota, including the Black Hills. Article XII required three-quarters of all adult male Lakota to consent to any future cession.</p>
+        <blockquote>"No treaty for the cession of any portion of the reservation shall be of any validity unless signed by at least three-fourths of all adult male Indians."</blockquote>
+        <p>Six years later, gold was discovered. In 1874, Custer led 1,200 men into the Black Hills in direct violation of the treaty. By 1875, there were an estimated <span class="stat">1,500 illegal miners</span> in the Hills. The government attempted to purchase them rather than enforce its own obligations.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-section" data-map="4">
+    <div class="text-panel">
+      <h2 class="panel-title">The Taking, 1877–1889</h2>
+      <p class="panel-date">Act of February 28, 1877 · Sioux Act 1889 · Dawes Act 1887</p>
+      <div class="panel-body">
+        <p>When Lakota leaders refused to sell, Congress cut off all food rations guaranteed under the 1868 treaty. The Manypenny Commission gathered <span class="red">230 signatures</span> — 10% of adult male Lakota. Three-quarters were required. On February 28, 1877, the United States officially seized <span class="red">7 million acres</span> of the Black Hills.</p>
+        <p>The Sioux Act of 1889 broke the single reservation into six units and opened <span class="red">9 million acres</span> to white settlement. The Dawes Act imposed individual 160-acre allotments; remaining land was declared "surplus" and sold. Between 1887 and 1934, Native American land holdings nationally collapsed from <span class="red">138 to 48 million acres</span>.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-section" data-map="5">
+    <div class="text-panel">
+      <h2 class="panel-title">What Remains</h2>
+      <p class="panel-date">Current tribal lands against the 1851 boundary</p>
+      <div class="panel-body">
+        <p>In 1980, the Supreme Court ruled unanimously that the Black Hills seizure was an unconstitutional taking. The settlement — now more than <span class="stat">$1.8 billion</span> — has been refused for over four decades.</p>
+        <blockquote>"The Black Hills are not for sale. We will never sell out our holy lands." — Frank Star Comes Out, Oglala Sioux Tribal President</blockquote>
+        <p>The Hills remain in federal and state hands. What the map shows as current tribal lands is what survives of a territory once spanning 60 million acres: a checkerboard of trust and fee land, the reservation boundary intact but its territorial coherence perforated by 150 years of deliberate legal instruments.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- PROGRESS DOTS -->
+<nav class="map-dots">
+  <div class="dot active" data-target="0"></div>
+  <div class="dot" data-target="1"></div>
+  <div class="dot" data-target="2"></div>
+  <div class="dot" data-target="3"></div>
+  <div class="dot" data-target="4"></div>
+</nav>
+
+<!-- OUTRO -->
+<section id="outro">
+  <div class="outro-inner">
+    <p class="outro-label">Conclusion</p>
+    <h2 class="outro-title">A stratigraphic document</h2>
+    <div class="outro-body">
+      <p>These maps are a sequence of legal instruments rendered as geography. The land did not change. The documents changed the land.</p>
+      <p>The central question is not only how much was taken, but through what mechanisms. This makes legible the tools of encroachment, not just its effects.</p>
+    </div>
+    <p class="disclaimer">Territory data: Native Land Digital (native-land.ca). Treaty boundary polygons constructed from historical sources including Royce Indian Land Cessions and NHGIS historical records. Native Land Digital data does not represent official or legal boundaries of any Indigenous nation. Map production: QGIS 3.x with Positron basemap.</p>
+  </div>
+</section>
+
+<script>
+  const sections = document.querySelectorAll('.scroll-section');
+  const maps     = document.querySelectorAll('.map-img');
+  const panels   = document.querySelectorAll('.text-panel');
+  const dots     = document.querySelectorAll('.dot');
+
+  let currentMap = 1;
+
+  function activateMap(n) {
+    if (n === currentMap) return;
+    currentMap = n;
+    maps.forEach((m, i) => m.classList.toggle('active', i + 1 === n));
+    dots.forEach((d, i) => d.classList.toggle('active', i + 1 === n));
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const n     = parseInt(entry.target.dataset.map);
+      const panel = entry.target.querySelector('.text-panel');
+      if (entry.isIntersecting) {
+        activateMap(n);
+        panel.classList.add('visible');
+      } else {
+        panel.classList.remove('visible');
+      }
+    });
+  }, { threshold: 0.5 });
+
+  sections.forEach(s => observer.observe(s));
+
+  dots.forEach((dot, i) => {
+    dot.addEventListener('click', () => {
+      sections[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  });
+</script>
+</body>
+</html>
